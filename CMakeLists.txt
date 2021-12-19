@@ -21,4 +21,11 @@ if (UNIX)
 	target_link_libraries(SPIRVVM m)
 endif()
 
-target_include_directories(SPIRVVM PRIVATE inc)
+target_include_directories(SPIRVVM PUBLIC inc)
+
+add_executable(SPIRVVM-example example/example.c)
+target_link_libraries(SPIRVVM-example PUBLIC SPIRVVM)
+
+add_executable(SPIRVVM-simulator simulator/simulator.cpp simulator/window.cpp)
+target_link_libraries(SPIRVVM-simulator PUBLIC SPIRVVM)
+target_compile_features(SPIRVVM-simulator PRIVATE cxx_std_17)

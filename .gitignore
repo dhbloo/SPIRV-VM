@@ -9,3 +9,6 @@ cmake_install.cmake
 Makefile
 compile.sh
 libSPIRVVM.a
+.vs/
+build/
+shaders
