@@ -1,6 +1,7 @@
 #include <spvm/ext/GLSL450.h>
 #include <spvm/state.h>
 #include "GLSL.std.450.h"
+#include "OpenCL.std.h"
 #include <math.h>
 
 #ifndef M_PI
@@ -1340,6 +1341,91 @@ spvm_ext_opcode_func* spvm_build_glsl450_ext()
 	ret[GLSLstd450NMin] = spvm_execute_GLSL450_NMin;
 	ret[GLSLstd450NMax] = spvm_execute_GLSL450_NMax;
 	ret[GLSLstd450NClamp] = spvm_execute_GLSL450_NClamp;
+
+	return ret;
+}
+
+spvm_ext_opcode_func* spvm_build_opencl_ext()
+{
+	spvm_ext_opcode_func* ret = (spvm_ext_opcode_func*)calloc(GLSLstd450Count, sizeof(spvm_ext_opcode_func));
+
+	ret[CL_Round] = spvm_execute_GLSL450_Round;
+	ret[CL_Trunc] = spvm_execute_GLSL450_Trunc;
+	ret[CL_Fabs] = spvm_execute_GLSL450_FAbs;
+	ret[CL_SAbs] = spvm_execute_GLSL450_SAbs;
+	ret[CL_Floor] = spvm_execute_GLSL450_Floor;
+	ret[CL_Ceil] = spvm_execute_GLSL450_Ceil;
+	ret[CL_Fract] = spvm_execute_GLSL450_Fract;
+	ret[CL_Radians] = spvm_execute_GLSL450_Radians;
+	ret[CL_Degrees] = spvm_execute_GLSL450_Degrees;
+	ret[CL_Sin] = spvm_execute_GLSL450_Sin;
+	ret[CL_Cos] = spvm_execute_GLSL450_Cos;
+	ret[CL_Tan] = spvm_execute_GLSL450_Tan;
+	// ret[GLSLstd450Asin] = spvm_execute_GLSL450_Asin;
+	// ret[GLSLstd450Acos] = spvm_execute_GLSL450_Acos;
+	// ret[GLSLstd450Atan] = spvm_execute_GLSL450_Atan;
+	// ret[GLSLstd450Sinh] = spvm_execute_GLSL450_Sinh;
+	// ret[GLSLstd450Cosh] = spvm_execute_GLSL450_Cosh;
+	// ret[GLSLstd450Tanh] = spvm_execute_GLSL450_Tanh;
+	// ret[GLSLstd450Asinh] = spvm_execute_GLSL450_Asinh;
+	// ret[GLSLstd450Acosh] = spvm_execute_GLSL450_Acosh;
+	// ret[GLSLstd450Atanh] = spvm_execute_GLSL450_Atanh;
+	// ret[GLSLstd450Atan2] = spvm_execute_GLSL450_Atan2;
+	ret[CL_Pow] = spvm_execute_GLSL450_Pow;
+	ret[CL_Exp] = spvm_execute_GLSL450_Exp;
+	ret[CL_Log] = spvm_execute_GLSL450_Log;
+	ret[CL_Exp2] = spvm_execute_GLSL450_Exp2;
+	ret[CL_Log2] = spvm_execute_GLSL450_Log2;
+	ret[CL_Sqrt] = spvm_execute_GLSL450_Sqrt;
+	// ret[GLSLstd450InverseSqrt] = spvm_execute_GLSL450_InverseSqrt;
+	// ret[GLSLstd450Determinant] = spvm_execute_GLSL450_Determinant;
+	// ret[GLSLstd450MatrixInverse] = spvm_execute_GLSL450_MatrixInverse;
+	ret[CL_Modf] = spvm_execute_GLSL450_Modf;
+	// ret[GLSLstd450ModfStruct] = spvm_execute_GLSL450_ModfStruct;
+	// ret[GLSLstd450FMin] = spvm_execute_GLSL450_FMin;
+	// ret[GLSLstd450UMin] = spvm_execute_GLSL450_UMin;
+	// ret[GLSLstd450SMin] = spvm_execute_GLSL450_SMin;
+	// ret[GLSLstd450FMax] = spvm_execute_GLSL450_FMax;
+	// ret[GLSLstd450UMax] = spvm_execute_GLSL450_UMax;
+	// ret[GLSLstd450SMax] = spvm_execute_GLSL450_SMax;
+	// ret[GLSLstd450FClamp] = spvm_execute_GLSL450_FClamp;
+	// ret[GLSLstd450UClamp] = spvm_execute_GLSL450_UClamp;
+	// ret[GLSLstd450SClamp] = spvm_execute_GLSL450_SClamp;
+	// ret[GLSLstd450FMix] = spvm_execute_GLSL450_FMix;
+	// ret[GLSLstd450Step] = spvm_execute_GLSL450_Step;
+	// ret[GLSLstd450SmoothStep] = spvm_execute_GLSL450_SmoothStep;
+	// ret[GLSLstd450Fma] = spvm_execute_GLSL450_Fma;
+	// ret[GLSLstd450Frexp] = spvm_execute_GLSL450_Frexp;
+	// ret[GLSLstd450FrexpStruct] = spvm_execute_GLSL450_FrexpStruct;
+	// ret[GLSLstd450Ldexp] = spvm_execute_GLSL450_Ldexp;
+	// ret[GLSLstd450PackSnorm4x8] = spvm_execute_GLSL450_PackSnorm4x8;
+	// ret[GLSLstd450PackUnorm4x8] = spvm_execute_GLSL450_PackUnorm4x8;
+	// ret[GLSLstd450PackSnorm2x16] = spvm_execute_GLSL450_PackSnorm2x16;
+	// ret[GLSLstd450PackUnorm2x16] = spvm_execute_GLSL450_PackUnorm2x16;
+	// ret[GLSLstd450PackDouble2x32] = spvm_execute_GLSL450_PackDouble2x32;
+	// ret[GLSLstd450PackHalf2x16] = spvm_execute_GLSL450_PackHalf2x16;
+	// ret[GLSLstd450UnpackHalf2x16] = spvm_execute_GLSL450_UnpackHalf2x16;
+	// ret[GLSLstd450UnpackDouble2x32] = spvm_execute_GLSL450_UnpackDouble2x32;
+	// ret[GLSLstd450UnpackSnorm2x16] = spvm_execute_GLSL450_UnpackSnorm2x16;
+	// ret[GLSLstd450UnpackUnorm2x16] = spvm_execute_GLSL450_UnpackUnorm2x16;
+	// ret[GLSLstd450UnpackSnorm4x8] = spvm_execute_GLSL450_UnpackSnorm4x8;
+	// ret[GLSLstd450UnpackUnorm4x8] = spvm_execute_GLSL450_UnpackUnorm4x8;
+	// ret[GLSLstd450Length] = spvm_execute_GLSL450_Length;
+	// ret[GLSLstd450Distance] = spvm_execute_GLSL450_Distance;
+	// ret[GLSLstd450Cross] = spvm_execute_GLSL450_Cross;
+	// ret[GLSLstd450Normalize] = spvm_execute_GLSL450_Normalize;
+	// ret[GLSLstd450FaceForward] = spvm_execute_GLSL450_FaceForward;
+	// ret[GLSLstd450Reflect] = spvm_execute_GLSL450_Reflect;
+	// ret[GLSLstd450Refract] = spvm_execute_GLSL450_Refract;
+	// ret[GLSLstd450FindILsb] = spvm_execute_GLSL450_FindILsb;
+	// ret[GLSLstd450FindSMsb] = spvm_execute_GLSL450_FindSMsb;
+	// ret[GLSLstd450FindUMsb] = spvm_execute_GLSL450_FindUMsb;
+	// ret[GLSLstd450InterpolateAtCentroid] = 0;
+	// ret[GLSLstd450InterpolateAtSample] = 0;
+	// ret[GLSLstd450InterpolateAtOffset] = 0;
+	// ret[GLSLstd450NMin] = spvm_execute_GLSL450_NMin;
+	// ret[GLSLstd450NMax] = spvm_execute_GLSL450_NMax;
+	// ret[GLSLstd450NClamp] = spvm_execute_GLSL450_NClamp;
 
 	return ret;
 }

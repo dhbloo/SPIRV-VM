@@ -114,6 +114,47 @@ void spvm_execute_OpAccessChain(spvm_word word_count, spvm_state_t state)
 		state->results[id].members = result;
 	}
 }
+void spvm_execute_OpPtrAccessChain(spvm_word word_count, spvm_state_t state)
+{
+	spvm_source source_pointer = state->code_current;
+
+	spvm_word var_type = SPVM_READ_WORD(state->code_current);
+	spvm_word id = SPVM_READ_WORD(state->code_current);
+	spvm_word value_id = SPVM_READ_WORD(state->code_current);
+	spvm_word element_id = SPVM_READ_WORD(state->code_current);
+	// TODO: process element id
+
+	spvm_word index_count = word_count - 5;
+
+	state->results[id].type = spvm_result_type_access_chain;
+	state->results[id].pointer = var_type;
+	state->results[id].storage_class = state->results[value_id].storage_class;
+	state->results[id].source_location = source_pointer;
+	state->results[id].source_word_count = word_count;
+
+	spvm_word index_id = SPVM_READ_WORD(state->code_current);
+	spvm_word index = state->results[index_id].members[0].value.s;
+
+	spvm_member_t result = state->results[value_id].members + SPVM_MIN(index, state->results[value_id].member_count - 1);
+
+	while (index_count) {
+		index_id = SPVM_READ_WORD(state->code_current);
+		index = state->results[index_id].members[0].value.s;
+
+		result = result->members + SPVM_MIN(index, result->member_count - 1);
+
+		index_count--;
+	}
+
+	if (result->member_count != 0) {
+		state->results[id].member_count = result->member_count;
+		state->results[id].members = result->members;
+	}
+	else {
+		state->results[id].member_count = 1;
+		state->results[id].members = result;
+	}
+}
 void spvm_execute_OpPtrEqual(spvm_word word_count, spvm_state_t state)
 {
 	SPVM_SKIP_WORD(state->code_current);
@@ -2099,6 +2140,9 @@ void _spvm_context_create_execute_table(spvm_context_t ctx)
 	ctx->opcode_execute[SpvOpCopyMemory] = spvm_execute_OpCopyMemory;
 	ctx->opcode_execute[SpvOpCopyMemorySized] = spvm_execute_OpCopyMemorySized;
 	ctx->opcode_execute[SpvOpAccessChain] = spvm_execute_OpAccessChain;
+	ctx->opcode_execute[SpvOpInBoundsAccessChain] = spvm_execute_OpAccessChain;
+	ctx->opcode_execute[SpvOpPtrAccessChain] = spvm_execute_OpPtrAccessChain;
+	ctx->opcode_execute[SpvOpInBoundsPtrAccessChain] = spvm_execute_OpPtrAccessChain;
 	ctx->opcode_execute[SpvOpPtrEqual] = spvm_execute_OpPtrEqual;
 	ctx->opcode_execute[SpvOpPtrNotEqual] = spvm_execute_OpPtrNotEqual;
 	ctx->opcode_execute[SpvOpPtrDiff] = NULL;

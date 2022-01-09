@@ -20,28 +20,29 @@ extern "C" {
 
 using spv_source = std::vector<spvm_word>;
 constexpr int N_THREADS = 8;
-constexpr int N_FRAGMENT_PER_GROUP = 64;
+constexpr int N_FRAGMENT_PER_GROUP = 512;
+constexpr int SCALE = 2;
 
 struct spv_thread {
 	std::unique_ptr<std::mutex> mutex;
 
 	spvm_state_t state;
 
-	spvm_result_t uBlock;
-	spvm_member_t uBlock_time;
-	spvm_member_t uBlock_info;
+	spvm_result_t time;
+	spvm_result_t coord;
+	spvm_result_t resolution;
 	spvm_word fnMain;
 	spvm_result_t outColor;
 
 	spv_thread(spvm_state_t state, spvm_ext_opcode_func* glsl_ext_data) : state(state), mutex(new std::mutex) {
-		spvm_result_t glsl_std_450 = spvm_state_get_result(state, "GLSL.std.450");
+		spvm_result_t glsl_std_450 = spvm_state_get_result(state, "OpenCL.std");
 		if (glsl_std_450)
 			glsl_std_450->extension = glsl_ext_data;
 
 		// get uBlock
-		uBlock = spvm_state_get_result(state, "uBlock");
-		uBlock_time = spvm_state_get_object_member(state, uBlock, "time");
-		uBlock_info = spvm_state_get_object_member(state, uBlock, "info");
+		time = spvm_state_get_result(state, "time");
+		coord = spvm_state_get_result(state, "coord");
+		resolution = spvm_state_get_result(state, "resolution");
 		fnMain = spvm_state_get_result_location(state, "main");
 
 		// get outColor
@@ -91,7 +92,7 @@ int main(int argv, char** argc) {
 		std::exit(EXIT_FAILURE);
 	}
 
-	Window window(640, 360, "SPIRV-Simulator");
+	Window window(1024, 640, "SPIRV-Simulator");
 
 	// context holds all opcode functions
 	spvm_context_t ctx = spvm_context_initialize();
@@ -103,7 +104,7 @@ int main(int argv, char** argc) {
 	spvm_program_t prog = spvm_program_create(ctx, spv.data(), spv.size());
 
 	// load extension
-	spvm_ext_opcode_func* glsl_ext_data = spvm_build_glsl450_ext();
+	spvm_ext_opcode_func* glsl_ext_data = spvm_build_opencl_ext();
 
 	// create states for all threads
 	std::vector<spv_thread> threads;
@@ -114,8 +115,8 @@ int main(int argv, char** argc) {
 	// create fragment groups
 	std::vector<fragment_group> fragment_groups;
 	fragment_group fragments;
-	for (int y = 0; y < window.height(); y++) {
-		for (int x = 0; x < window.width(); x++) {
+	for (int y = 0; y < window.height() / SCALE; y++) {
+		for (int x = 0; x < window.width() / SCALE; x++) {
 			fragments.push_back({ x, y });
 
 			if (fragments.size() >= N_FRAGMENT_PER_GROUP)
@@ -127,6 +128,8 @@ int main(int argv, char** argc) {
 	}
 
 	clock_t start_time = clock();
+	float resolution[2] = { (float)window.width() / SCALE , (float)window.height() / SCALE };
+
 	while (window.is_run()) {
 		// set uBlock.time
 		float elapsed_time = float(clock() - start_time) * (1.0f / CLOCKS_PER_SEC);
@@ -145,11 +148,16 @@ int main(int argv, char** argc) {
 				std::lock_guard<std::mutex> lock(*t.mutex);
 
 				for (fragment f : frag_group) {
-					t.uBlock_time->value.f = elapsed_time;
+					if (t.time)
+						t.time->members[0].value.f = elapsed_time;
 
-					// set uBlock.info
-					float fragCoord[2] = { (float)f.x / window.width(), (float)f.y / window.height() };
-					spvm_member_set_value_f(t.uBlock_info->members, t.uBlock_info->member_count, fragCoord);
+					// set coord, resolution
+					if (t.coord) {
+						float fragCoord[2] = { (float)f.x, (float)f.y };
+						spvm_member_set_value_f(t.coord->members, t.coord->member_count, fragCoord);
+					}
+					if (t.resolution)
+						spvm_member_set_value_f(t.resolution->members, t.resolution->member_count, resolution);
 
 					// call main
 					spvm_state_prepare(t.state, t.fnMain);
@@ -161,20 +169,31 @@ int main(int argv, char** argc) {
 					float b = t.outColor->members[2].value.f;
 					float a = t.outColor->members[3].value.f;
 
+					int prevColor = *window(f.x * SCALE, f.y * SCALE);
+					float prevr = ((prevColor >> 16) & 0xff) / 255.0f;
+					float prevg = ((prevColor >> 8) & 0xff) / 255.0f;
+					float prevb = (prevColor & 0xff) / 255.0f;
+
+					r = r * a + prevr * (1 - a);
+					g = g * a + prevg * (1 - a);
+					b = b * a + prevb * (1 - a);
+
 					int ir = std::clamp(int(r * 255), 0, 255);
 					int ig = std::clamp(int(g * 255), 0, 255);
 					int ib = std::clamp(int(b * 255), 0, 255);
-					int ia = std::clamp(int(a * 255), 0, 255);
-
 					int color = (ir << 16) | (ig << 8) | ib;
-					*window(f.x, f.y) = color;
+
+					for (int xi = 0; xi < SCALE; xi++)
+						for (int yi = 0; yi < SCALE; yi++) {
+							*window(f.x * SCALE + xi, f.y * SCALE + yi) = color;
+						}
 
 					// accumulate pixel count that discarded
 					total_discarded.fetch_add(t.state->discarded);
 				}
 			});
 
-		std::cout << "total discarded: " << total_discarded << "\n";
+		// std::cout << "total discarded: " << total_discarded << "\n";
 		window.update();
 		window.set_title(("SPIRV-Simulator (fps: " + std::to_string(window.get_fps()) + ")").c_str());
 	}
